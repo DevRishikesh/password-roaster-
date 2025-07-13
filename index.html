@@ -1,0 +1,240 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Password Strength Roaster</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .glow-button:hover {
+            box-shadow: 0 0 15px 5px rgba(168, 85, 247, 0.4);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #a855f7;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4 selection:bg-purple-500 selection:text-white">
+
+    <div class="w-full max-w-md mx-auto">
+        <div class="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-6 md:p-8 shadow-2xl shadow-purple-900/20">
+            
+            <!-- Header -->
+            <div class="text-center mb-6">
+                <h1 class="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
+                    Password Roaster AI
+                </h1>
+                <p class="text-gray-400 mt-2 text-sm md:text-base">Drop your password, get flamed. It's that simple.</p>
+            </div>
+             <!-- Input Form -->
+            <div class="space-y-4">
+                <div class="relative">
+                    <input type="password" id="passwordInput" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300" placeholder="Is it 'password123'? Be real.">
+                    <button id="toggleVisibility" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-purple-400">
+                        <svg id="eye-open" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        <svg id="eye-closed" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M9.9 4.24A9 9 0 0 1 12 3c7 0 10 7 10 7a13.2 13.2 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.5 13.5 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" x2="22" y1="2" y2="22"></line></svg>
+                    </button>
+                </div>
+                <button id="roastButton" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 rounded-lg hover:from-purple-500 hover:to-pink-500 transition-all duration-300 transform hover:scale-105 glow-button">
+                    Roast Me
+                </button>
+            </div>
+
+            <!-- Result Section -->
+            <div id="resultSection" class="mt-8 text-center hidden">
+                <!-- Loader -->
+                <div id="loader" class="mx-auto loader mb-4"></div>
+                
+                <!-- AI Roast -->
+                <div id="roastContent" class="hidden">
+                    <p id="roastMessage" class="text-lg font-medium text-purple-300 mb-4"></p>
+                    
+                    <!-- Meme/GIF -->
+                    <img id="roastImage" src="" alt="Roast Meme" class="rounded-lg mx-auto w-full max-w-xs h-auto object-cover border-2 border-gray-700" onerror="this.src='https://placehold.co/400x300/111827/a78bfa?text=Meme+Error'; this.onerror=null;">
+                </div>
+                 <!-- Error Message -->
+                <div id="errorMessage" class="hidden p-4 bg-red-900/50 border border-red-500 rounded-lg">
+                    <p id="errorText" class="text-red-300">Yikes, the AI is taking a nap. Try again later.</p>
+                </div>
+            </div>
+        </div>
+        <footer class="text-center mt-6 text-gray-600 text-xs">
+            <p>Disclaimer: Don't use your actual passwords here, fam. This is for fun.</p>
+        </footer>
+    </div>
+
+    <script>
+        const MY_SECRET_API_KEY = "AIzaSyD6_urosALLp6C9twGzJuMoM-5oFzJ_ssk";
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const roastButton = document.getElementById('roastButton');
+        const resultSection = document.getElementById('resultSection');
+        const loader = document.getElementById('loader');
+        const roastContent = document.getElementById('roastContent');
+        const roastMessage = document.getElementById('roastMessage');
+        const roastImage = document.getElementById('roastImage');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const toggleVisibility = document.getElementById('toggleVisibility');
+        const eyeOpen = document.getElementById('eye-open');
+        const eyeClosed = document.getElementById('eye-closed');
+
+        // Pre-selected "roast" images/memes
+        const memeDatabase = [
+            'https://media.tenor.com/x8v1oNUOmg4AAAAd/rickroll-roll.gif',
+            'https://media.tenor.com/1B5-G4I_f48AAAAC/disappointed-disappointment.gif',
+            'https://media.tenor.com/1W9R_t4-L2wAAAAC/kermit-the-frog-typing.gif',
+            'https://media.tenor.com/g2a1l2B12zAAAAAC/disgusted-disgust-ew.gif',
+            'https://media.tenor.com/tZ2Xd8_oZ_sAAAAC/no-no-no-way.gif',
+            'https://media.tenor.com/hmfGmxKq5wQAAAAC/spongebob-spongebob-squarepants.gif',
+            'https://media.tenor.com/1f_1D5_sB-sAAAAC/what-the-hell-is-this-will-smith.gif'
+        ];
+
+        // Toggle password visibility
+        toggleVisibility.addEventListener('click', () => {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            eyeOpen.classList.toggle('hidden', isPassword);
+            eyeClosed.classList.toggle('hidden', !isPassword);
+        });
+
+        roastButton.addEventListener('click', () => {
+            const apiKey = MY_SECRET_API_KEY;
+
+            const password = passwordInput.value;
+
+            if (!apiKey) {
+                displayError("Please enter your API Key first. 🔑");
+                return;
+            }
+
+            if (!password) {
+                displayError("You gotta enter a password to roast. Duh. 🤔");
+                return;
+            }
+            
+            // Reset UI
+            resultSection.classList.remove('hidden');
+            roastContent.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+            loader.classList.remove('hidden');
+            
+            analyzeAndRoast(password, apiKey);
+        });
+
+        function getPasswordCharacteristics(password) {
+            const characteristics = [];
+            if (password.length < 8) characteristics.push("it's shorter than my attention span");
+            if (password.length > 20) characteristics.push("it's longer than a CVS receipt");
+            if (!/[A-Z]/.test(password)) characteristics.push("has no uppercase letters");
+            if (!/[a-z]/.test(password)) characteristics.push("has no lowercase letters");
+            if (!/\d/.test(password)) characteristics.push("has no numbers");
+            if (!/[^A-Za-z0-9]/.test(password)) characteristics.push("has no special characters");
+            if (/(password|1234|qwerty|iloveyou)/i.test(password)) characteristics.push("uses a super common word");
+
+            if (characteristics.length === 0) {
+                return "it's actually kinda decent, I'm shook.";
+            }
+            return characteristics.join(', ');
+        }
+
+        async function analyzeAndRoast(password, apiKey) {
+            const characteristics = getPasswordCharacteristics(password);
+            const prompt = `  
+            You are a savage, hilarious AI that roasts people’s weak passwords like a Tamil meme page admin.
+
+Use Tanglish (Tamil + English) with punchlines inspired by classic Tamil comedies (Vadivelu, Goundamani, Santhanam) and trending Tamil memes. The roast should be short (1–2 lines), funny, sarcastic, and sound like it’s straight out of a viral meme page.
+
+Here’s the password’s weakness: ${characteristics}
+
+Based on this, write a savage Tamil meme–style roast. Use modern lingo, funny Tamil expressions, meme exaggeration, and end with a fitting emoji (🔥😂💀😩 etc.).
+
+❌ Don’t explain the weakness.  
+✅ Just roast brutally and comedically like you're flaming them in the comment section.  
+✅ No hashtags. No explanation. Just punchy, funny, Tamil-style roast.
+
+            `;
+
+            try {
+                // --- Call to Gemini API ---
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                
+                const payload = {
+                    contents: [{
+                        role: "user",
+                        parts: [{ text: prompt }]
+                    }]
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.json();
+                    const errorMsg = errorBody.error?.message || "Something went wrong with the API.";
+                    console.error("API Error Response:", errorMsg);
+                    throw new Error(errorMsg);
+                }
+
+                const result = await response.json();
+                
+                let roastText = "The AI is speechless, which is a roast in itself. 💀";
+                if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0].text) {
+                    roastText = result.candidates[0].content.parts[0].text.trim();
+                }
+                
+                displayResults(roastText);
+
+            } catch (error) {
+                console.error("Error fetching from Gemini API:", error);
+                displayError(`API Error: ${error.message}`);
+            }
+        }
+
+        function displayResults(text) {
+            loader.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+            
+            roastMessage.textContent = text;
+            roastImage.src = memeDatabase[Math.floor(Math.random() * memeDatabase.length)];
+            
+            roastContent.classList.remove('hidden');
+            roastContent.classList.add('fade-in');
+        }
+
+        function displayError(message = "Yikes, the AI is taking a nap. Try again later.") {
+            loader.classList.add('hidden');
+            roastContent.classList.add('hidden');
+            errorText.textContent = message;
+            errorMessage.classList.remove('hidden');
+            errorMessage.classList.add('fade-in');
+        }
+
+    </script>
+</body>
+</html>
